@@ -1,4 +1,4 @@
-const registerBoardSocket = require("./boardsocket");
+const registerBoardSocket = require("./boardSocket");
 
 function registerSocket(io) {
 	io.on("connection", (socket) => {
