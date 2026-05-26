@@ -1,7 +1,7 @@
 const { User } = require("../models");
 const { verifyToken } = require("../helpers/jwt");
 const { errorName } = require("../helpers/enums");
-const { AppError } = require("./errorHandler");
+const { AppError } = require("../models/utils/class");
 
 async function authentication(req, res, next) {
 	try {
