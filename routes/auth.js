@@ -1,7 +1,7 @@
+const UserController = require("../controllers/UserController");
+
 const router = require("express").Router();
 
-router.get("/login", (req, res) => {
-	res.status(200).json("login");
-});
+router.post("/login", UserController.login);
 
 module.exports = router;

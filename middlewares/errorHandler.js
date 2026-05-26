@@ -25,11 +25,4 @@ function errorHandler(err, req, res, next) {
 	res.status(errorCode).json({ message });
 }
 
-class AppError extends Error {
-	constructor(name, message) {
-		super(message);
-		this.name = name;
-	}
-}
-
-module.exports = { errorHandler, AppError };
+module.exports = errorHandler;
