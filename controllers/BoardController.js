@@ -8,11 +8,11 @@ class BoardController {
     try {
       const userId = req.user.id;
 
-      const member = await BoardMember.findAll({
+      const resMember = await BoardMember.findAll({
         where: { UserId: userId },
         attributes: ["BoardId"],
       });
-      const boardId = member.map((m) => m.BoardId);
+      const boardId = resMember.map((m) => m.BoardId);
 
       const boards = await Board.findAll({
         where: { id: { [Op.in]: boardId } },
@@ -51,10 +51,10 @@ class BoardController {
       const userId = req.user.id;
       const { boardId } = req.params;
 
-      const member = await BoardMember.findOne({
+      const findMember = await BoardMember.findOne({
         where: { BoardId: boardId, UserId: userId },
       });
-      if (!member) throw new AppError(errorName.Forbidden, "Access denied");
+      if (!findMember) throw new AppError(errorName.Forbidden, "Access denied");
 
       const board = await Board.findByPk(boardId, {
         include: [
@@ -79,14 +79,14 @@ class BoardController {
       const board = await Board.findByPk(boardId);
       if (!board) throw new AppError(errorName.NotFound, "Board not found");
 
-      const member = await BoardMember.findOne({
+      const findMember = await BoardMember.findOne({
         where: {
           BoardId: boardId,
           UserId: userId,
           role: BoardMemberRole.owner,
         },
       });
-      if (!member)
+      if (!findMember)
         throw new AppError(errorName.Forbidden, "Only owner can update board");
 
       await board.update({ name, description });
