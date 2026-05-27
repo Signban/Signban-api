@@ -8,9 +8,9 @@ const port = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 const io = new Server(server, {
-	cors: {
-		origin: process.env.CLIENT_URL || "*",
-	},
+  cors: {
+    origin: process.env.CLIENT_URL || "*",
+  },
 });
 
 app.set("io", io);
@@ -18,5 +18,5 @@ app.set("io", io);
 registerSocket(io);
 
 server.listen(port, () => {
-	console.log(`this app listening on port http://localhost:${port}`);
+  console.log(`this app listening on port http://localhost:${port}`);
 });
