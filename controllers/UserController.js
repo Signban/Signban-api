@@ -50,9 +50,14 @@ class UserController {
       next(error);
     }
   }
+
   static async getCurrentUser(req, res, next) {
     try {
-      res.status(200).json(req.user);
+      const user = await User.findByPk(req.user.id, {
+        attributes: ["id", "name", "email", "avatarUrl"],
+      });
+
+      res.status(200).json(user);
     } catch (error) {
       next(error);
     }
