@@ -5,6 +5,23 @@ const { errorName } = require("../helpers/enums");
 const { AppError } = require("../models/utils/class");
 
 class UserController {
+  static async register(req, res, next) {
+    try {
+      const { name, email, password } = req.body;
+
+      const user = await User.create({ name, email, password });
+
+      res.status(201).json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async login(req, res, next) {
     try {
       const { email, password } = req.body;
