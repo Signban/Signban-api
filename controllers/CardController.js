@@ -275,7 +275,7 @@ class CardController {
         assignedById,
       });
 
-      res.status(201).json({ message: "Assignee added successfully" });
+      await res.status(201).json({ message: "Assignee added successfully" });
     } catch (error) {
       next(error);
     }
@@ -318,7 +318,8 @@ class CardController {
       const checklist = await Checklist.findOne({
         where: { id: checklistId, CardId: cardId },
       });
-      if (!checklist) throw new AppError(errorName.NotFound, "Checklist not found");
+      if (!checklist)
+        throw new AppError(errorName.NotFound, "Checklist not found");
 
       await checklist.destroy();
 
