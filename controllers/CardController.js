@@ -26,8 +26,9 @@ class CardController {
 
 			const board = await KanbanService.getBoardDetail(boardId, userId);
 
-			BoardRealtimeService.emitToBoard(req, boardId, "board:updated", {
+			BoardRealtimeService.emitToBoard(req, boardId, "card:created", {
 				board,
+				card,
 			});
 
 			res.status(201).json({

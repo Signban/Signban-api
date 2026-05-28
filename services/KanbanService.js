@@ -180,6 +180,13 @@ class KanbanService {
 				throw new AppError(errorName.BadRequest, "Card title is required");
 			}
 
+			if (!description) {
+				throw new AppError(
+					errorName.BadRequest,
+					"Card description is required",
+				);
+			}
+
 			const maxPositionCard = await Card.findOne({
 				where: {
 					BoardId: boardId,

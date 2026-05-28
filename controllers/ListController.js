@@ -13,8 +13,9 @@ class ListController {
 			const list = await KanbanService.createList(boardId, userId, req.body);
 			const board = await KanbanService.getBoardDetail(boardId, userId);
 
-			BoardRealtimeService.emitToBoard(req, boardId, "board:updated", {
+			BoardRealtimeService.emitToBoard(req, boardId, "list:created", {
 				board,
+				list,
 			});
 
 			res.status(201).json({
