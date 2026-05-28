@@ -13,6 +13,7 @@ const KanbanService = require("../services/KanbanService");
 const BoardRealtimeService = require("../services/BoardRealtimeService");
 const { generateAiChecklist } = require("../helpers/gemini");
 const NotificationRealtimeService = require("../services/NotificationRealtimeService");
+const { uploadBufferToCloudinary } = require("../helpers/cloudinary");
 
 class CardController {
 	static async createCard(req, res, next) {
@@ -105,6 +106,49 @@ class CardController {
 			});
 
 			res.status(200).json({ message: "Card updated successfully", card });
+		} catch (error) {
+			next(error);
+		}
+	}
+
+	static async updateCardCover(req, res, next) {
+		try {
+			const userId = req.user.id;
+			const { boardId, cardId } = req.params;
+
+			const findMember = await BoardMember.findOne({
+				where: { BoardId: boardId, UserId: userId },
+			});
+			if (!findMember) throw new AppError(errorName.Forbidden, "Access denied");
+
+			const card = await Card.findOne({
+				where: { id: cardId, BoardId: boardId },
+			});
+			if (!card) throw new AppError(errorName.NotFound, "Card not found");
+
+			if (!req.file) {
+				throw new AppError(errorName.BadRequest, "Cover image is required");
+			}
+
+			const uploadResult = await uploadBufferToCloudinary(req.file.buffer, {
+				folder: "Signban/cards",
+				public_id: `Signban-Card-${cardId}-Cover`,
+			});
+
+			await card.update({ coverUrl: uploadResult.secure_url });
+
+			const board = await KanbanService.getBoardDetail(boardId, userId);
+
+			BoardRealtimeService.emitToBoard(req, boardId, "card:updated", {
+				board,
+				card,
+			});
+
+			res.status(200).json({
+				message: "Card cover updated successfully",
+				card,
+				board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -281,7 +325,7 @@ class CardController {
 
 			NotificationRealtimeService.emitToUser(req, userId, notification);
 
-			await res.status(201).json({ message: "Assignee added successfully" });
+			res.status(201).json({ message: "Assignee added successfully" });
 		} catch (error) {
 			next(error);
 		}
