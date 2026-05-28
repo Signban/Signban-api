@@ -16,6 +16,50 @@ const NotificationRealtimeService = require("../services/NotificationRealtimeSer
 const { uploadBufferToCloudinary } = require("../helpers/cloudinary");
 
 class CardController {
+	static async getCardDetail(boardId, cardId) {
+		const card = await Card.findOne({
+			where: { id: cardId, BoardId: boardId },
+			include: [
+				{ model: User, attributes: ["id", "name", "email", "avatarUrl"] },
+				{
+					model: CardAssignee,
+					include: [
+						{ model: User, attributes: ["id", "name", "email", "avatarUrl"] },
+					],
+				},
+				{ model: Checklist },
+				{
+					model: Comment,
+					include: [{ model: User, attributes: ["id", "name", "email", "avatarUrl"] }],
+				},
+			],
+			order: [
+				[Checklist, "position", "ASC"],
+				[Comment, "createdAt", "ASC"],
+			],
+		});
+
+		if (!card) throw new AppError(errorName.NotFound, "Card not found");
+
+		return card;
+	}
+
+	static async emitCardRealtime(req, boardId, cardId, userId, eventName, payload = {}) {
+		const [board, card] = await Promise.all([
+			KanbanService.getBoardDetail(boardId, userId),
+			CardController.getCardDetail(boardId, cardId),
+		]);
+
+		BoardRealtimeService.emitToBoard(req, boardId, eventName, {
+			board,
+			card,
+			cardId: Number(cardId),
+			...payload,
+		});
+
+		return { board, card };
+	}
+
 	static async createCard(req, res, next) {
 		try {
 			const userId = req.user.id;
@@ -30,8 +74,11 @@ class CardController {
 
 			const board = await KanbanService.getBoardDetail(boardId, userId);
 
-			BoardRealtimeService.emitToBoard(req, boardId, "board:updated", {
+			BoardRealtimeService.emitToBoard(req, boardId, "card:created", {
 				board,
+				card,
+				cardId: Number(card.id),
+				listId: Number(listId),
 			});
 
 			res.status(201).json({
@@ -54,24 +101,7 @@ class CardController {
 			});
 			if (!findMember) throw new AppError(errorName.Forbidden, "Access denied");
 
-			const card = await Card.findOne({
-				where: { id: cardId, BoardId: boardId },
-				include: [
-					{ model: User, attributes: ["id", "name", "email", "avatarUrl"] },
-					{
-						model: CardAssignee,
-						include: [
-							{ model: User, attributes: ["id", "name", "email", "avatarUrl"] },
-						],
-					},
-					{ model: Checklist, order: [["position", "ASC"]] },
-					{
-						model: Comment,
-						include: [{ model: User, attributes: ["id", "name", "avatarUrl"] }],
-					},
-				],
-			});
-			if (!card) throw new AppError(errorName.NotFound, "Card not found");
+			const card = await CardController.getCardDetail(boardId, cardId);
 
 			res.status(200).json({ card });
 		} catch (error) {
@@ -105,7 +135,19 @@ class CardController {
 				...(position !== undefined && { position }),
 			});
 
-			res.status(200).json({ message: "Card updated successfully", card });
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				userId,
+				"card:updated",
+			);
+
+			res.status(200).json({
+				message: "Card updated successfully",
+				card: realtime.card,
+				board: realtime.board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -137,17 +179,18 @@ class CardController {
 
 			await card.update({ coverUrl: uploadResult.secure_url });
 
-			const board = await KanbanService.getBoardDetail(boardId, userId);
-
-			BoardRealtimeService.emitToBoard(req, boardId, "card:updated", {
-				board,
-				card,
-			});
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				userId,
+				"card:updated",
+			);
 
 			res.status(200).json({
 				message: "Card cover updated successfully",
-				card,
-				board,
+				card: realtime.card,
+				board: realtime.board,
 			});
 		} catch (error) {
 			next(error);
@@ -205,12 +248,23 @@ class CardController {
 				content,
 			});
 			const commentWithUser = await Comment.findByPk(comment.id, {
-				include: [{ model: User, attributes: ["id", "name", "avatarUrl"] }],
+				include: [{ model: User, attributes: ["id", "name", "email", "avatarUrl"] }],
 			});
+
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				userId,
+				"comment:created",
+				{ comment: commentWithUser },
+			);
 
 			res.status(201).json({
 				message: "Comment created successfully",
 				comment: commentWithUser,
+				card: realtime.card,
+				board: realtime.board,
 			});
 		} catch (error) {
 			next(error);
@@ -242,7 +296,21 @@ class CardController {
 				position: count,
 			});
 
-			res.status(201).json({ message: "Checklist item created successfully" });
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				userId,
+				"checklist:created",
+				{ checklist },
+			);
+
+			res.status(201).json({
+				message: "Checklist item created successfully",
+				checklist,
+				card: realtime.card,
+				board: realtime.board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -273,7 +341,21 @@ class CardController {
 				}),
 			});
 
-			res.status(200).json({ message: "Checklist updated successfully" });
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				userId,
+				"checklist:updated",
+				{ checklist },
+			);
+
+			res.status(200).json({
+				message: "Checklist updated successfully",
+				checklist,
+				card: realtime.card,
+				board: realtime.board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -307,7 +389,7 @@ class CardController {
 			if (existing)
 				throw new AppError(errorName.BadRequest, "User is already assigned");
 
-			await CardAssignee.create({
+			const assignee = await CardAssignee.create({
 				CardId: cardId,
 				UserId: userId,
 				assignedById,
@@ -325,7 +407,21 @@ class CardController {
 
 			NotificationRealtimeService.emitToUser(req, userId, notification);
 
-			res.status(201).json({ message: "Assignee added successfully" });
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				assignedById,
+				"card:assigned",
+				{ assignee, userId: Number(userId) },
+			);
+
+			res.status(201).json({
+				message: "Assignee added successfully",
+				assignee,
+				card: realtime.card,
+				board: realtime.board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -349,7 +445,20 @@ class CardController {
 
 			await assignee.destroy();
 
-			res.status(200).json({ message: "Assignee removed successfully" });
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				requesterId,
+				"card:unassigned",
+				{ userId: Number(userId) },
+			);
+
+			res.status(200).json({
+				message: "Assignee removed successfully",
+				card: realtime.card,
+				board: realtime.board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -373,7 +482,20 @@ class CardController {
 
 			await checklist.destroy();
 
-			res.status(200).json({ message: "Checklist item deleted successfully" });
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				requesterId,
+				"checklist:deleted",
+				{ checklistId: Number(checklistId) },
+			);
+
+			res.status(200).json({
+				message: "Checklist item deleted successfully",
+				card: realtime.card,
+				board: realtime.board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -399,11 +521,12 @@ class CardController {
 
 			const board = await KanbanService.getBoardDetail(boardId, userId);
 
-			BoardRealtimeService.emitToBoard(req, boardId, "board:updated", {
+			BoardRealtimeService.emitToBoard(req, boardId, "card:deleted", {
 				board,
+				cardId: Number(cardId),
 			});
 
-			res.status(200).json({ message: "Card deleted successfully" });
+			res.status(200).json({ message: "Card deleted successfully", board });
 		} catch (error) {
 			next(error);
 		}
@@ -446,9 +569,20 @@ class CardController {
 				})),
 			);
 
+			const realtime = await CardController.emitCardRealtime(
+				req,
+				boardId,
+				cardId,
+				userId,
+				"checklist:created",
+				{ checklists, aiGenerated: true },
+			);
+
 			res.status(201).json({
 				message: "AI checklist generated successfully",
-				checklists,
+				checklists: realtime.card.Checklists || checklists,
+				card: realtime.card,
+				board: realtime.board,
 			});
 		} catch (error) {
 			next(error);
