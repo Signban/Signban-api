@@ -255,15 +255,25 @@ class CardController {
       const targetMember = await BoardMember.findOne({
         where: { BoardId: boardId, UserId: userId },
       });
-      if (!targetMember) throw new AppError(errorName.NotFound, "User is not a board member");
+      if (!targetMember)
+        throw new AppError(errorName.NotFound, "User is not a board member");
 
-      const card = await Card.findOne({ where: { id: cardId, BoardId: boardId } });
+      const card = await Card.findOne({
+        where: { id: cardId, BoardId: boardId },
+      });
       if (!card) throw new AppError(errorName.NotFound, "Card not found");
 
-      const existing = await CardAssignee.findOne({ where: { CardId: cardId, UserId: userId } });
-      if (existing) throw new AppError(errorName.BadRequest, "User is already assigned");
+      const existing = await CardAssignee.findOne({
+        where: { CardId: cardId, UserId: userId },
+      });
+      if (existing)
+        throw new AppError(errorName.BadRequest, "User is already assigned");
 
-      await CardAssignee.create({ CardId: cardId, UserId: userId, assignedById });
+      await CardAssignee.create({
+        CardId: cardId,
+        UserId: userId,
+        assignedById,
+      });
 
       res.status(201).json({ message: "Assignee added successfully" });
     } catch (error) {
@@ -281,12 +291,38 @@ class CardController {
       });
       if (!findMember) throw new AppError(errorName.Forbidden, "Access denied");
 
-      const assignee = await CardAssignee.findOne({ where: { CardId: cardId, UserId: userId } });
-      if (!assignee) throw new AppError(errorName.NotFound, "Assignee not found");
+      const assignee = await CardAssignee.findOne({
+        where: { CardId: cardId, UserId: userId },
+      });
+      if (!assignee)
+        throw new AppError(errorName.NotFound, "Assignee not found");
 
       await assignee.destroy();
 
       res.status(200).json({ message: "Assignee removed successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async delChecklist(req, res, next) {
+    try {
+      const requesterId = req.user.id;
+      const { boardId, cardId, checklistId } = req.params;
+
+      const findMember = await BoardMember.findOne({
+        where: { BoardId: boardId, UserId: requesterId },
+      });
+      if (!findMember) throw new AppError(errorName.Forbidden, "Access denied");
+
+      const checklist = await Checklist.findOne({
+        where: { id: checklistId, CardId: cardId },
+      });
+      if (!checklist) throw new AppError(errorName.NotFound, "Checklist not found");
+
+      await checklist.destroy();
+
+      res.status(200).json({ message: "Checklist item deleted successfully" });
     } catch (error) {
       next(error);
     }
