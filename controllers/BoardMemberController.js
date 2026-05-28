@@ -1,4 +1,4 @@
-const { Op, where } = require("sequelize");
+const { Op } = require("sequelize");
 const {
 	Board,
 	BoardMember,
@@ -155,7 +155,10 @@ class BoardMemberController {
 				userId: Number(userId),
 			});
 
-			res.status(200).json({ message: "Member removed successfully", board: nextBoard });
+			res.status(200).json({
+				message: "Member removed successfully",
+				board: nextBoard,
+			});
 		} catch (error) {
 			next(error);
 		}
