@@ -287,11 +287,7 @@ class CardController {
 				message: `You are added to card ${card.title}`,
 			});
 
-			NotificationRealtimeService.emitToUser(
-				req,
-				targetMember.id,
-				notification,
-			);
+			NotificationRealtimeService.emitToUser(req, userId, notification);
 
 			await res.status(201).json({ message: "Assignee added successfully" });
 		} catch (error) {
