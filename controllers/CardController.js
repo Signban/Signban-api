@@ -39,14 +39,6 @@ class CardController {
 
 		if (!card) throw new AppError(errorName.NotFound, "Card not found");
 
-		if (card.Checklists) {
-			card.Checklists.sort((a, b) => (a.position || 0) - (b.position || 0));
-		}
-
-		if (card.Comments) {
-			card.Comments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-		}
-
 		return card;
 	}
 
