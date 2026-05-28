@@ -1,4 +1,4 @@
-const router = require("express").Router;
+const router = require("express").Router();
 const authentication = require("../middlewares/authentication");
 const ListController = require("../controllers/ListController");
 const { route } = require("./boards");
