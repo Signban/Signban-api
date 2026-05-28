@@ -40,7 +40,7 @@ class BoardMemberController {
 
   static async addMember(req, res, next) {
     try {
-      const memberId = req.user.id;
+      const actorId = req.user.id;
       const { boardId } = req.params;
       const { email } = req.body;
 
@@ -79,7 +79,7 @@ class BoardMemberController {
 
       const notification = await Notification.create({
         UserId: findUser.id,
-        MemberId: memberId,
+        ActorId: actorId,
         BoardId: parseInt(boardId),
         CardId: null,
         type: NotificationType.board_added,
@@ -87,10 +87,6 @@ class BoardMemberController {
         message: `You have been added to board ${board.name}`,
         isRead: false,
       });
-
-      //   const io = req.app.get("io");
-      //   io.to(`board:${boardId}`).emit("board:member-added", { member });
-      //   io.to(`user:${findUser.id}`).emit("notification:new", { notification });
 
       res
         .status(201)
@@ -102,7 +98,7 @@ class BoardMemberController {
 
   static async removeMember(req, res, next) {
     try {
-      const memberId = req.user.id;
+      const actorId = req.user.id;
       const { boardId, userId } = req.params;
 
       const findMember = await BoardMember.findOne({
@@ -137,12 +133,6 @@ class BoardMemberController {
       }
 
       await delMember.destroy();
-
-      //   const io = req.app.get("io");
-      //   io.to(`board:${boardId}`).emit("board:member-removed", {
-      //     boardId: parseInt(boardId),
-      //     userId: parseInt(userId),
-      //   });
 
       res.status(200).json({ message: "Member removed successfully" });
     } catch (error) {
