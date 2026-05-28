@@ -14,6 +14,10 @@ router.post(
   CardController.createComment,
 );
 router.post(
+  "/boards/:boardId/cards/:cardId/checklists/ai-generate",
+  CardController.generateWithAI,
+);
+router.post(
   "/boards/:boardId/cards/:cardId/checklists",
   CardController.createChecklist,
 );
