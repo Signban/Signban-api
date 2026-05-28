@@ -368,6 +368,52 @@ class CardController {
       next(error);
     }
   }
+
+  static async generateWithAI(req, res, next) {
+    try {
+      const userId = req.user.id;
+      const { boardId, cardId } = req.params;
+
+      const findMember = await BoardMember.findOne({
+        where: { BoardId: boardId, UserId: userId },
+      });
+      if (!findMember) throw new AppError(errorName.Forbidden, "Access denied");
+
+      const card = await Card.findOne({
+        where: { id: cardId, BoardId: boardId },
+      });
+      if (!card) throw new AppError(errorName.NotFound, "Card not found");
+
+      const resAI = await generateWithAI({
+        cardTitle: card.title,
+        cardDescription: card.description,
+        dueDate: card.dueDate,
+      });
+
+      await card.update({
+        priority: resAI.priority,
+        dueDate: resAI.dueDate,
+      });
+
+      const checklists = await Checklist.bulkCreate(
+        aiResult.checklists.map((item) => ({
+          CardId: parseInt(cardId),
+          createdById: userId,
+          title: item.title,
+          position: item.position,
+          isAiGenerated: true,
+          isCompleted: false,
+        })),
+      );
+
+      res.status(201).json({
+        message: "AI checklist generated successfully",
+        checklists,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = CardController;
