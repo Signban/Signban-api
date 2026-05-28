@@ -14,6 +14,8 @@ const {
 	NotificationType,
 } = require("../helpers/enums");
 const NotificationRealtimeService = require("../services/NotificationRealtimeService");
+const BoardRealtimeService = require("../services/BoardRealtimeService");
+const KanbanService = require("../services/KanbanService");
 
 class BoardMemberController {
 	static async getMembers(req, res, next) {
@@ -90,9 +92,19 @@ class BoardMemberController {
 			});
 			NotificationRealtimeService.emitToUser(req, findUser.id, notification);
 
-			res
-				.status(201)
-				.json({ message: "Member added successfully", member, notification });
+			const nextBoard = await KanbanService.getBoardDetail(boardId, actorId);
+
+			BoardRealtimeService.emitToBoard(req, boardId, "board:member-added", {
+				board: nextBoard,
+				member,
+			});
+
+			res.status(201).json({
+				message: "Member added successfully",
+				member,
+				notification,
+				board: nextBoard,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -106,7 +118,7 @@ class BoardMemberController {
 			const findMember = await BoardMember.findOne({
 				where: {
 					BoardId: boardId,
-					UserId: memberId,
+					UserId: actorId,
 					role: BoardMemberRole.owner,
 				},
 			});
@@ -136,7 +148,14 @@ class BoardMemberController {
 
 			await delMember.destroy();
 
-			res.status(200).json({ message: "Member removed successfully" });
+			const nextBoard = await KanbanService.getBoardDetail(boardId, actorId);
+
+			BoardRealtimeService.emitToBoard(req, boardId, "board:member-removed", {
+				board: nextBoard,
+				userId: Number(userId),
+			});
+
+			res.status(200).json({ message: "Member removed successfully", board: nextBoard });
 		} catch (error) {
 			next(error);
 		}
