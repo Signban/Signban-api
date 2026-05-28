@@ -46,7 +46,19 @@ class ListController {
 
 			await findList.update({ name });
 
-			res.status(200).json({ message: "List updated successfully" });
+			const board = await KanbanService.getBoardDetail(boardId, userId);
+
+			BoardRealtimeService.emitToBoard(req, boardId, "list:updated", {
+				board,
+				list: findList,
+				listId: Number(listId),
+			});
+
+			res.status(200).json({
+				message: "List updated successfully",
+				list: findList,
+				board,
+			});
 		} catch (error) {
 			next(error);
 		}
@@ -104,7 +116,14 @@ class ListController {
 
 			await findList.destroy();
 
-			res.status(200).json({ message: "List deleted successfully" });
+			const board = await KanbanService.getBoardDetail(boardId, userId);
+
+			BoardRealtimeService.emitToBoard(req, boardId, "list:deleted", {
+				board,
+				listId: Number(listId),
+			});
+
+			res.status(200).json({ message: "List deleted successfully", board });
 		} catch (error) {
 			next(error);
 		}
