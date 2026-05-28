@@ -5,9 +5,10 @@ const {
   Comment,
   User,
   BoardMember,
+  Notification,
 } = require("../models");
 const { AppError } = require("../models/utils/class");
-const { errorName } = require("../helpers/enums");
+const { errorName, NotificationType } = require("../helpers/enums");
 const KanbanService = require("../services/KanbanService");
 const BoardRealtimeService = require("../services/BoardRealtimeService");
 
@@ -272,6 +273,16 @@ class CardController {
         CardId: cardId,
         UserId: userId,
         assignedById,
+      });
+
+      await Notification.create({
+        ActorId: assignedById,
+        UserId: userId,
+        BoardId: boardId,
+        CardId: cardId,
+        type: NotificationType.card_assigned,
+        title: "Added to card",
+        message: `You are added to card ${card.title}`,
       });
 
       await res.status(201).json({ message: "Assignee added successfully" });
