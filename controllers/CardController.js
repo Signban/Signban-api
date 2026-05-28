@@ -30,12 +30,14 @@ class CardController {
 				{ model: Checklist },
 				{
 					model: Comment,
-					include: [{ model: User, attributes: ["id", "name", "email", "avatarUrl"] }],
+					include: [
+						{ model: User, attributes: ["id", "name", "email", "avatarUrl"] },
+					],
 				},
 			],
 			order: [
-				[Checklist, "position", "ASC"],
-				[Comment, "createdAt", "ASC"],
+				[{ model: Checklist }, "position", "ASC"],
+				[{ model: Comment }, "createdAt", "ASC"],
 			],
 		});
 
@@ -44,7 +46,14 @@ class CardController {
 		return card;
 	}
 
-	static async emitCardRealtime(req, boardId, cardId, userId, eventName, payload = {}) {
+	static async emitCardRealtime(
+		req,
+		boardId,
+		cardId,
+		userId,
+		eventName,
+		payload = {},
+	) {
 		const [board, card] = await Promise.all([
 			KanbanService.getBoardDetail(boardId, userId),
 			CardController.getCardDetail(boardId, cardId),
@@ -248,7 +257,9 @@ class CardController {
 				content,
 			});
 			const commentWithUser = await Comment.findByPk(comment.id, {
-				include: [{ model: User, attributes: ["id", "name", "email", "avatarUrl"] }],
+				include: [
+					{ model: User, attributes: ["id", "name", "email", "avatarUrl"] },
+				],
 			});
 
 			const realtime = await CardController.emitCardRealtime(
