@@ -82,15 +82,8 @@ class CardController {
 		try {
 			const userId = req.user.id;
 			const { boardId, cardId } = req.params;
-			const {
-				title,
-				description,
-				priority,
-				dueDate,
-				coverUrl,
-				ListId,
-				position,
-			} = req.body;
+			const { title, description, priority, dueDate, ListId, position } =
+				req.body;
 
 			const findMember = await BoardMember.findOne({
 				where: { BoardId: boardId, UserId: userId },
@@ -107,7 +100,6 @@ class CardController {
 				...(description !== undefined && { description }),
 				...(priority !== undefined && { priority }),
 				...(dueDate !== undefined && { dueDate }),
-				...(coverUrl !== undefined && { coverUrl }),
 				...(ListId !== undefined && { ListId }),
 				...(position !== undefined && { position }),
 			});
