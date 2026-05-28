@@ -119,7 +119,7 @@ class KanbanService {
 	}
 
 	static async moveList(boardId, listId, userId, newPosition) {
-		await sequelize.transaction(async (transaction) => {
+		return await sequelize.transaction(async (transaction) => {
 			await this.checkBoardMember(boardId, userId, transaction);
 
 			const targetList = await List.findOne({
@@ -154,6 +154,7 @@ class KanbanService {
 					list.update({ position: index + 1 }, { transaction }),
 				),
 			);
+
 			return await KanbanService.getBoardDetail(boardId, userId, transaction);
 		});
 	}
@@ -217,7 +218,7 @@ class KanbanService {
 	}
 
 	static async moveCard(boardId, cardId, userId, payload) {
-		await sequelize.transaction(async (transaction) => {
+		return await sequelize.transaction(async (transaction) => {
 			await this.checkBoardMember(boardId, userId, transaction);
 
 			const { sourceListId, destinationListId, newPosition } = payload;
@@ -292,6 +293,7 @@ class KanbanService {
 					),
 				);
 			}
+
 			return await KanbanService.getBoardDetail(boardId, userId, transaction);
 		});
 	}
