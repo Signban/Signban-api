@@ -35,10 +35,11 @@ class KanbanService {
 		return { board, member };
 	}
 
-	static async getBoardDetail(boardId, userId) {
-		await this.checkBoardMember(boardId, userId);
+	static async getBoardDetail(boardId, userId, transaction = null) {
+		await this.checkBoardMember(boardId, userId, transaction);
 
 		const board = await Board.findByPk(boardId, {
+			transaction,
 			include: [
 				{
 					model: List,
@@ -153,6 +154,7 @@ class KanbanService {
 					list.update({ position: index + 1 }, { transaction }),
 				),
 			);
+			return await KanbanService.getBoardDetail(boardId, userId, transaction);
 		});
 	}
 
@@ -283,6 +285,7 @@ class KanbanService {
 					),
 				);
 			}
+			return await KanbanService.getBoardDetail(boardId, userId, transaction);
 		});
 	}
 }

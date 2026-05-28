@@ -29,17 +29,17 @@ class UserController {
     try {
       const { email, password } = req.body;
 
-      if (!email) throw new AppError(errorName.BadRequest, "email is required");
+      if (!email) throw new AppError(errorName.BadRequest, "Email is required");
       if (!password)
-        throw new AppError(errorName.BadRequest, "password is required");
+        throw new AppError(errorName.BadRequest, "Password is required");
 
       const user = await User.findOne({ where: { email } });
       if (!user)
-        throw new AppError(errorName.Unauthorized, "invalid email/password");
+        throw new AppError(errorName.Unauthorized, "Invalid email/password");
 
       const isValid = checkPassword(password, user.password);
       if (!isValid)
-        throw new AppError(errorName.Unauthorized, "invalid email/password");
+        throw new AppError(errorName.Unauthorized, "Invalid email/password");
 
       const access_token = signToken({
         id: user.id,
@@ -130,10 +130,10 @@ class UserController {
       const { oldPassword, newPassword } = req.body;
 
       if (!oldPassword)
-        throw new AppError(errorName.BadRequest, "oldPassword is required");
-			
+        throw new AppError(errorName.BadRequest, "Old Password is required");
+
       if (!newPassword)
-        throw new AppError(errorName.BadRequest, "newPassword is required");
+        throw new AppError(errorName.BadRequest, "New Password is required");
 
       const user = await User.findByPk(req.user.id);
 
@@ -221,7 +221,7 @@ class UserController {
       if (!token) throw new AppError(errorName.BadRequest, "Token is required");
 
       if (!newPassword)
-        throw new AppError(errorName.BadRequest, "newPassword is required");
+        throw new AppError(errorName.BadRequest, "New Password is required");
 
       const user = await User.findOne({ where: { resetPasswordToken: token } });
 
