@@ -1,5 +1,5 @@
 const { User } = require("../models");
-const { checkPassword, hashPassword } = require("../helpers/bcrypt");
+const { checkPassword } = require("../helpers/bcrypt");
 const { signToken } = require("../helpers/jwt");
 const { errorName } = require("../helpers/enums");
 const { AppError } = require("../models/utils/class");
@@ -146,7 +146,7 @@ class UserController {
       if (!isValid)
         throw new AppError(errorName.Unauthorized, "Old password is incorrect");
 
-      await user.update({ password: hashPassword(newPassword) });
+      await user.update({ password: newPassword });
 
       res.status(200).json({ message: "Password updated successfully" });
     } catch (error) {
