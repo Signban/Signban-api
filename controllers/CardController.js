@@ -16,6 +16,22 @@ const NotificationRealtimeService = require("../services/NotificationRealtimeSer
 const { uploadBufferToCloudinary } = require("../helpers/cloudinary");
 
 class CardController {
+	static sortCardChildren(card) {
+		if (!card) return card;
+
+		const plainCard = card.toJSON ? card.toJSON() : card;
+
+		return {
+			...plainCard,
+			Checklists: [...(plainCard.Checklists || [])].sort(
+				(a, b) => (a.position || 0) - (b.position || 0),
+			),
+			Comments: [...(plainCard.Comments || [])].sort(
+				(a, b) => new Date(a.createdAt) - new Date(b.createdAt),
+			),
+		};
+	}
+
 	static async getCardDetail(boardId, cardId) {
 		const card = await Card.findOne({
 			where: { id: cardId, BoardId: boardId },
@@ -39,7 +55,7 @@ class CardController {
 
 		if (!card) throw new AppError(errorName.NotFound, "Card not found");
 
-		return card;
+		return CardController.sortCardChildren(card);
 	}
 
 	static async emitCardRealtime(
