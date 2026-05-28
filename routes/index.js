@@ -12,5 +12,5 @@ router.use(notificationRoute);
 router.get("/", (req, res) => {
   res.status(200).json("home");
 });
-9;
+
 module.exports = router;
