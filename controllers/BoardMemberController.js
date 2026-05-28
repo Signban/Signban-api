@@ -13,6 +13,7 @@ const {
 	BoardMemberRole,
 	NotificationType,
 } = require("../helpers/enums");
+const NotificationRealtimeService = require("../services/NotificationRealtimeService");
 
 class BoardMemberController {
 	static async getMembers(req, res, next) {
@@ -83,10 +84,11 @@ class BoardMemberController {
 				BoardId: parseInt(boardId),
 				CardId: null,
 				type: NotificationType.board_added,
-				title: "Added to board",
+				title: `Added to ${board.name}`,
 				message: `You have been added to board ${board.name}`,
 				isRead: false,
 			});
+			NotificationRealtimeService.emitToUser(req, findUser.id, notification);
 
 			res
 				.status(201)
