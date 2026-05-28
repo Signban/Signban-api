@@ -25,5 +25,17 @@ router.patch(
   "/boards/:boardId/cards/:cardId/checklists/:checklistId",
   CardController.updateChecklist,
 );
+router.post(
+  "/boards/:boardId/cards/:cardId/assignees",
+  CardController.addAssignee,
+);
+router.delete(
+  "/boards/:boardId/cards/:cardId/assignees/:userId",
+  CardController.removeAssignee,
+);
+router.delete(
+  "/boards/:boardId/cards/:cardId/checklists/:checklistId",
+  CardController.delChecklist,
+);
 
 module.exports = router;
