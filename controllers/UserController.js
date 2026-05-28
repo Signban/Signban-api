@@ -4,6 +4,8 @@ const { signToken } = require("../helpers/jwt");
 const { errorName } = require("../helpers/enums");
 const { AppError } = require("../models/utils/class");
 const { OAuth2Client } = require("google-auth-library");
+const crypto = require("crypto");
+const { sendMail } = require("../helpers/mailer");
 
 class UserController {
   static async register(req, res, next) {
@@ -88,6 +90,99 @@ class UserController {
       const access_token = signToken({ id: user.id, email: user.email });
 
       res.status(200).json({ access_token });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async forgotPassword(req, res, next) {
+    try {
+      const { email } = req.body;
+      if (!email) throw new AppError(errorName.BadRequest, "Email is required");
+
+      const user = await User.findOne({ where: { email } });
+      if (!user) throw new AppError(errorName.NotFound, "User not found");
+
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const resetPasswordExpiredAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await user.update({
+        resetPasswordToken: resetToken,
+        resetPasswordExpiredAt,
+      });
+
+      const resetLink = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
+
+      await sendMail({
+        to: user.email,
+        subject: "Reset Password Signban",
+        html: `
+        <h2>Reset Password</h2>
+				<p>Click the link below to reset your password:</p>
+				<a href="${resetLink}">${resetLink}</a>
+				<p>This link will expire in 15 minutes.</p>
+      `,
+      });
+
+      res
+        .status(200)
+        .json({ message: "Reset password link has been sent to your email" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async checkResetPasswordToken(req, res, next) {
+    try {
+      const { token } = req.body;
+      if (!token) throw new AppError(errorName.BadRequest, "Token is required");
+
+      const user = await User.findOne({ where: { resetPasswordToken: token } });
+
+      if (
+        !user ||
+        !user.resetPasswordExpiredAt ||
+        user.resetPasswordExpiredAt < new Date()
+      )
+        throw new AppError(
+          errorName.Unauthorized,
+          "Invalid or expired reset password token",
+        );
+
+      res.status(200).json({ message: "Reset password token is valid" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async resetPassword(req, res, next) {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token) throw new AppError(errorName.BadRequest, "Token is required");
+
+      if (!newPassword)
+        throw new AppError(errorName.BadRequest, "newPassword is required");
+
+      const user = await User.findOne({ where: { resetPasswordToken: token } });
+
+      if (
+        !user ||
+        !user.resetPasswordExpiredAt ||
+        user.resetPasswordExpiredAt < new Date()
+      )
+        throw new AppError(
+          errorName.Unauthorized,
+          "Invalid or expired reset password token",
+        );
+
+      await user.update({
+        password: newPassword,
+        resetPasswordToken: null,
+        resetPasswordExpiredAt: null,
+      });
+
+      res.status(200).json({ message: "Password has been reset successfully" });
     } catch (error) {
       next(error);
     }
