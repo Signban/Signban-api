@@ -11,6 +11,7 @@ const { AppError } = require("../models/utils/class");
 const { errorName, NotificationType } = require("../helpers/enums");
 const KanbanService = require("../services/KanbanService");
 const BoardRealtimeService = require("../services/BoardRealtimeService");
+const { generateAiChecklist } = require("../helpers/gemini");
 
 class CardController {
   static async createCard(req, res, next) {
@@ -384,7 +385,7 @@ class CardController {
       });
       if (!card) throw new AppError(errorName.NotFound, "Card not found");
 
-      const resAI = await generateWithAI({
+      const resAI = await generateAiChecklist({
         cardTitle: card.title,
         cardDescription: card.description,
         dueDate: card.dueDate,
@@ -396,7 +397,7 @@ class CardController {
       });
 
       const checklists = await Checklist.bulkCreate(
-        aiResult.checklists.map((item) => ({
+        resAI.checklists.map((item) => ({
           CardId: parseInt(cardId),
           createdById: userId,
           title: item.title,

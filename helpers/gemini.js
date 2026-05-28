@@ -2,7 +2,7 @@ const { GoogleGenAI } = require("@google/genai");
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function generateAiChecklist(cardTitle, cardDescription, dueDate) {
-	const prompt = `Kamu adalah AI Project Assistant yang bertugas menganalisis task dalam sebuah kanban board.
+  const prompt = `Kamu adalah AI Project Assistant yang bertugas menganalisis task dalam sebuah kanban board.
 
 Berdasarkan judul, deskripsi, dan due date card berikut, lakukan assessment dan hasilkan:
 1. Priority level task berdasarkan tingkat urgensi dan kompleksitasnya
@@ -48,16 +48,16 @@ Description: ${cardDescription || "No description"}
 Due Date: ${dueDate || "Not set"}
 `;
 
-	const response = await ai.models.generateContent({
-		model: "gemini-3.5-flash",
-		contents: prompt,
-		config: {
-			temperature: 0.2,
-			responseMimeType: "application/json",
-		},
-	});
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt,
+    config: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+    },
+  });
 
-	return JSON.parse(response.text);
+  return JSON.parse(response.text);
 }
 
 module.exports = { generateAiChecklist };
