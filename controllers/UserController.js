@@ -1,5 +1,5 @@
 const { User } = require("../models");
-const { checkPassword } = require("../helpers/bcrypt");
+const { checkPassword, hashPassword } = require("../helpers/bcrypt");
 const { signToken } = require("../helpers/jwt");
 const { errorName } = require("../helpers/enums");
 const { AppError } = require("../models/utils/class");
@@ -93,6 +93,60 @@ class UserController {
       const access_token = signToken({ id: user.id, email: user.email });
 
       res.status(200).json({ access_token });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateName(req, res, next) {
+    try {
+      const { name } = req.body;
+
+      if (!name) throw new AppError(errorName.BadRequest, "Name is required");
+
+      const user = await User.findByPk(req.user.id);
+
+      if (!user) {
+        throw new AppError(errorName.NotFound, "User not found");
+      }
+
+      await user.update({ name });
+
+      res.status(200).json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updatePassword(req, res, next) {
+    try {
+      const { oldPassword, newPassword } = req.body;
+
+      if (!oldPassword)
+        throw new AppError(errorName.BadRequest, "oldPassword is required");
+			
+      if (!newPassword)
+        throw new AppError(errorName.BadRequest, "newPassword is required");
+
+      const user = await User.findByPk(req.user.id);
+
+      if (!user) {
+        throw new AppError(errorName.NotFound, "User not found");
+      }
+
+      const isValid = checkPassword(oldPassword, user.password);
+
+      if (!isValid)
+        throw new AppError(errorName.Unauthorized, "Old password is incorrect");
+
+      await user.update({ password: hashPassword(newPassword) });
+
+      res.status(200).json({ message: "Password updated successfully" });
     } catch (error) {
       next(error);
     }
