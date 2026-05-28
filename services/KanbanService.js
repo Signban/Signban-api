@@ -35,10 +35,11 @@ class KanbanService {
 		return { board, member };
 	}
 
-	static async getBoardDetail(boardId, userId) {
-		await this.checkBoardMember(boardId, userId);
+	static async getBoardDetail(boardId, userId, transaction = null) {
+		await this.checkBoardMember(boardId, userId, transaction);
 
 		const board = await Board.findByPk(boardId, {
+			transaction,
 			include: [
 				{
 					model: List,
@@ -118,7 +119,7 @@ class KanbanService {
 	}
 
 	static async moveList(boardId, listId, userId, newPosition) {
-		return await sequelize.transaction(async (transaction) => {
+		await sequelize.transaction(async (transaction) => {
 			await this.checkBoardMember(boardId, userId, transaction);
 
 			const targetList = await List.findOne({
@@ -140,6 +141,7 @@ class KanbanService {
 			});
 
 			const filteredLists = lists.filter((list) => list.id !== Number(listId));
+
 			const safePosition = Math.max(
 				0,
 				Math.min(Number(newPosition), filteredLists.length),
@@ -152,8 +154,7 @@ class KanbanService {
 					list.update({ position: index + 1 }, { transaction }),
 				),
 			);
-
-			return await this.getBoardDetail(boardId, userId);
+			return await KanbanService.getBoardDetail(boardId, userId, transaction);
 		});
 	}
 
@@ -209,7 +210,7 @@ class KanbanService {
 	}
 
 	static async moveCard(boardId, cardId, userId, payload) {
-		return await sequelize.transaction(async (transaction) => {
+		await sequelize.transaction(async (transaction) => {
 			await this.checkBoardMember(boardId, userId, transaction);
 
 			const { sourceListId, destinationListId, newPosition } = payload;
@@ -248,14 +249,14 @@ class KanbanService {
 			const oldListId = Number(sourceListId || card.ListId);
 			const nextListId = Number(destinationListId);
 
-			const affectedListIds = [...new Set([oldListId, nextListId])];
-
 			await card.update(
 				{
 					ListId: nextListId,
 				},
 				{ transaction },
 			);
+
+			const affectedListIds = [...new Set([oldListId, nextListId])];
 
 			for (const currentListId of affectedListIds) {
 				let cards = await Card.findAll({
@@ -284,8 +285,7 @@ class KanbanService {
 					),
 				);
 			}
-
-			return await this.getBoardDetail(boardId, userId);
+			return await KanbanService.getBoardDetail(boardId, userId, transaction);
 		});
 	}
 }

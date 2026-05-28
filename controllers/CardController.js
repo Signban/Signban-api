@@ -64,7 +64,6 @@ class CardController {
           {
             model: Comment,
             include: [{ model: User, attributes: ["id", "name", "avatarUrl"] }],
-            order: [["createdAt", "ASC"]],
           },
         ],
       });
