@@ -34,6 +34,19 @@ function registerBoardSocket(io, socket) {
 			cardId,
 		});
 	});
+
+	socket.on("comment:typing-start", ({ boardId, cardId, userName }) => {
+		socket.to(`board:${boardId}`).emit("comment:typing-start", {
+			cardId: Number(cardId),
+			userName: userName || "Someone",
+		});
+	});
+
+	socket.on("comment:typing-stop", ({ boardId, cardId }) => {
+		socket.to(`board:${boardId}`).emit("comment:typing-stop", {
+			cardId: Number(cardId),
+		});
+	});
 }
 
 module.exports = registerBoardSocket;
