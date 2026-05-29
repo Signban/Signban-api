@@ -6,6 +6,7 @@ const { AppError } = require("../models/utils/class");
 const { OAuth2Client } = require("google-auth-library");
 const crypto = require("crypto");
 const { sendMail } = require("../helpers/mailer");
+const { uploadBufferToCloudinary } = require("../helpers/cloudinary");
 
 class UserController {
   static async register(req, res, next) {
@@ -209,6 +210,38 @@ class UserController {
         );
 
       res.status(200).json({ message: "Reset password token is valid" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async updateAvatar(req, res, next) {
+    try {
+      const { id } = req.user;
+
+      const user = await User.findByPk(id);
+      if (!user) {
+        throw new AppError(errorName.NotFound, "User not found");
+      }
+
+      if (!req.file) {
+        throw new AppError(errorName.BadRequest, "Image is required");
+      }
+
+      const result = await uploadBufferToCloudinary(req.file.buffer, {
+        folder: "Signban/users",
+        public_id: `Signban-user${id}`,
+      });
+
+      await user.update({ avatarUrl: result.secure_url });
+
+      res.status(200).json({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        message: "Profile picture updated successfully",
+      });
     } catch (error) {
       next(error);
     }
