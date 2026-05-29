@@ -1,5 +1,6 @@
 const UserController = require("../controllers/UserController");
 const authentication = require("../middlewares/authentication");
+const upload = require("../helpers/multer");
 
 const router = require("express").Router();
 
@@ -18,6 +19,12 @@ router.patch(
   "/account/password",
   authentication,
   UserController.updatePassword,
+);
+router.patch(
+  "/account/avatar",
+  authentication,
+  upload.single("avatar"),
+  UserController.updateAvatar,
 );
 
 module.exports = router;
