@@ -8,9 +8,11 @@ const {
 	Checklist,
 	Comment,
 	User,
+	sequelize,
 } = require("../models");
 const { AppError } = require("../models/utils/class");
 const { errorName, BoardMemberRole } = require("../helpers/enums");
+const { generateAiBoardLists } = require("../helpers/gemini");
 
 class BoardController {
 	static async getMyBoards(req, res, next) {
@@ -47,22 +49,64 @@ class BoardController {
 	}
 
 	static async createBoard(req, res, next) {
+		const transaction = await sequelize.transaction();
+
 		try {
 			const userId = req.user.id;
-			const { name, description } = req.body;
+			const { name, description, generatedListWithAi } = req.body;
 
-			const board = await Board.create({ name, description, ownerId: userId });
+			const board = await Board.create(
+				{
+					name,
+					description,
+					ownerId: userId,
+				},
+				{ transaction },
+			);
 
-			await BoardMember.create({
-				BoardId: board.id,
-				UserId: userId,
-				role: BoardMemberRole.owner,
-				addedById: userId,
-				joinedAt: new Date(),
+			await BoardMember.create(
+				{
+					BoardId: board.id,
+					UserId: userId,
+					role: BoardMemberRole.owner,
+					addedById: userId,
+					joinedAt: new Date(),
+				},
+				{ transaction },
+			);
+
+			let createdLists = [];
+
+			const shouldGenerateListWithAi =
+				generatedListWithAi === true || generatedListWithAi === "true";
+
+			if (shouldGenerateListWithAi) {
+				const aiLists = await generateAiBoardLists(name, description);
+
+				if (aiLists.length > 0) {
+					createdLists = await List.bulkCreate(
+						aiLists.map((list, index) => ({
+							name: list.name,
+							position: list.position || index + 1,
+							BoardId: board.id,
+						})),
+						{
+							transaction,
+							returning: true,
+						},
+					);
+				}
+			}
+
+			await transaction.commit();
+
+			res.status(201).json({
+				message: "Board created successfully",
+				board,
+				lists: createdLists,
 			});
-
-			res.status(201).json({ message: "Board created successfully", board });
 		} catch (error) {
+			await transaction.rollback();
 			next(error);
 		}
 	}

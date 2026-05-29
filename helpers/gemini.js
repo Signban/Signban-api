@@ -2,7 +2,7 @@ const { GoogleGenAI } = require("@google/genai");
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 async function generateAiChecklist(cardTitle, cardDescription, dueDate) {
-  const prompt = `Kamu adalah AI Project Assistant yang bertugas menganalisis task dalam sebuah kanban board.
+	const prompt = `Kamu adalah AI Project Assistant yang bertugas menganalisis task dalam sebuah kanban board.
 
 Berdasarkan judul, deskripsi, dan due date card berikut, lakukan assessment dan hasilkan:
 1. Priority level task berdasarkan tingkat urgensi dan kompleksitasnya
@@ -48,16 +48,68 @@ Description: ${cardDescription || "No description"}
 Due Date: ${dueDate || "Not set"}
 `;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-    config: {
-      temperature: 0.2,
-      responseMimeType: "application/json",
-    },
-  });
+	const response = await ai.models.generateContent({
+		model: "gemini-2.5-flash",
+		contents: prompt,
+		config: {
+			temperature: 0.2,
+			responseMimeType: "application/json",
+		},
+	});
 
-  return JSON.parse(response.text);
+	return JSON.parse(response.text);
 }
 
-module.exports = { generateAiChecklist };
+async function generateAiBoardLists(boardName, boardDescription) {
+	const prompt = `Kamu adalah AI Project Assistant untuk aplikasi kanban board.
+
+Berdasarkan nama board dan deskripsi board berikut, buatkan daftar list/column kanban yang paling cocok.
+
+WAJIB balas dalam format JSON valid saja.
+Jangan gunakan markdown.
+Jangan tambahkan penjelasan di luar JSON.
+Jangan gunakan trailing comma.
+
+ATURAN:
+- Buat 3 sampai 6 list
+- Nama list harus singkat, jelas, dan cocok untuk workflow kanban
+- Gunakan bahasa yang natural dan mudah dipahami
+- position dimulai dari 1
+- HANYA balas JSON dengan format berikut:
+
+{
+	"lists": [
+		{ "name": "string", "position": 1 },
+		{ "name": "string", "position": 2 },
+		{ "name": "string", "position": 3 }
+	]
+}
+
+DATA BOARD:
+Name: ${boardName}
+Description: ${boardDescription || "No description"}
+`;
+
+	const response = await ai.models.generateContent({
+		model: "gemini-2.5-flash",
+		contents: prompt,
+		config: {
+			temperature: 0.2,
+			responseMimeType: "application/json",
+		},
+	});
+
+	const result = JSON.parse(response.text);
+
+	if (!result.lists || !Array.isArray(result.lists)) {
+		return [];
+	}
+
+	return result.lists
+		.filter((list) => list.name)
+		.map((list, index) => ({
+			name: list.name,
+			position: list.position || index + 1,
+		}));
+}
+module.exports = { generateAiChecklist, generateAiBoardLists };
