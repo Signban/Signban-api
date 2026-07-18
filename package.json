@@ -1,47 +1,53 @@
 {
-	"name": "signban-api",
-	"version": "1.0.0",
-	"description": "backend for signban",
-	"main": "app.js",
-	"scripts": {
-		"test": "jest --runInBand --verbose --detectOpenHandles --forceExit",
-		"dev": "nodemon ./bin/www",
-		"migrate": "npx sequelize-cli db:migrate",
-		"seed": "npx sequelize-cli db:seed:all",
-		"undo": "npx sequelize-cli db:migrate:undo:all",
-		"start": "node ./bin/www"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/Signban/Signban-api.git"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"type": "commonjs",
-	"bugs": {
-		"url": "https://github.com/Signban/Signban-api/issues"
-	},
-	"homepage": "https://github.com/Signban/Signban-api#readme",
-	"dependencies": {
-		"@google/genai": "^2.6.0",
-		"bcryptjs": "^3.0.3",
-		"cloudinary": "^2.10.0",
-		"cors": "^2.8.6",
-		"dotenv": "^17.4.2",
-		"express": "^5.2.1",
-		"google-auth-library": "^10.6.2",
-		"jsonwebtoken": "^9.0.3",
-		"multer": "^2.1.1",
-		"nodemailer": "^8.0.8",
-		"pg": "^8.21.0",
-		"sequelize": "^6.37.8",
-		"socket.io": "^4.8.3",
-		"swagger-ui-express": "^5.0.1"
-	},
-	"devDependencies": {
-		"jest": "^30.4.2",
-		"sequelize-cli": "^6.6.5",
-		"supertest": "^7.2.2"
-	}
+  "name": "signban-api",
+  "version": "1.0.0",
+  "description": "Backend API for Signban",
+  "main": "app.js",
+  "scripts": {
+    "test": "jest --runInBand --verbose --detectOpenHandles --forceExit",
+    "dev": "node --watch ./bin/www",
+    "migrate": "node ./scripts/migrate.js",
+    "seed": "npx sequelize-cli db:seed:all",
+    "undo": "npx sequelize-cli db:migrate:undo:all",
+    "start": "node ./bin/www"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Signban/Signban-api.git"
+  },
+  "keywords": [
+    "express",
+    "sequelize",
+    "postgresql",
+    "socket.io",
+    "kanban"
+  ],
+  "author": "Signban",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Signban/Signban-api/issues"
+  },
+  "homepage": "https://github.com/Signban/Signban-api#readme",
+  "dependencies": {
+    "@google/genai": "^2.6.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "google-auth-library": "^10.6.2",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.8",
+    "pg": "^8.21.0",
+    "sequelize": "^6.37.8",
+    "socket.io": "^4.8.3",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "sequelize-cli": "^6.6.5",
+    "supertest": "^7.2.2"
+  }
 }
