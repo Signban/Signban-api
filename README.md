@@ -84,7 +84,7 @@ openssl rand -hex 64
 | Command | Purpose |
 | --- | --- |
 | `npm start` | Start the production server |
-| `npm run dev` | Start with Nodemon |
+| `npm run dev` | Start with Node.js native watch mode |
 | `npm run migrate` | Apply pending migrations without requiring development dependencies |
 | `npm run seed` | Run Sequelize seeders in a development environment |
 | `npm run undo` | Undo all migrations through Sequelize CLI |
@@ -138,7 +138,7 @@ For a PostgreSQL resource inside the same Coolify network, use its internal conn
 ```env
 NODE_ENV=production
 DB_SSL=false
-DATABASE_URL=postgresql://USER:PASSWORD:HOST:5432/DATABASE
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:5432/DATABASE
 ```
 
 Set `DB_SSL=true` only for an external database provider that explicitly requires TLS.
